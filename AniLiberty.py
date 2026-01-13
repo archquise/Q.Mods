@@ -79,6 +79,7 @@ class AniLibertyMod(loader.Module):
         "type": "<b>Тип</b>:",
         "genres": "<b>Жанры</b>:",
         "favorite": "<b>Избранное &lt;3</b>:",  # &lt; == <
+        "_cls_doc": "Ищет и отправляет случайное аниме из базы AniLiberty",
     }
 
     async def search_title(self, query):

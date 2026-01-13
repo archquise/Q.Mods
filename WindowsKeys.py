@@ -45,6 +45,7 @@ class WindowsKeysMod(loader.Module):
         "select": "🔓 Выберите версию:",
         "close": "🎈 Закрыть",
         "loading": "⌛ Загрузка...",
+        "_cls_doc": "KMS ключи активации Windows"
     }
 
     def __init__(self):

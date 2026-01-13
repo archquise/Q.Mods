@@ -56,6 +56,7 @@ class IrisSimpleMod(loader.Module):
         "error_no_response": "<emoji document_id=5854929766146118183>❌</emoji> Нет ответа от бота. Попробуйте еще раз.",
         "error_timeout": "<emoji document_id=5854929766146118183>❌</emoji> Таймаут запроса. Попробуйте еще раз.",
         "error_general": "<emoji document_id=5854929766146118183>❌</emoji> Произошла ошибка: {error}",
+        "_cls_doc": "Модуль для базового взаимодействия с Ирисом!"
     }
 
     async def _send_and_delete(
