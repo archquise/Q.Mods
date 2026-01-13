@@ -27,7 +27,7 @@ from .. import loader, utils
 logger = logging.getLogger(__name__)
 
 @loader.tds
-class face(loader.Module):
+class FaceMod(loader.Module):
     """random face"""
 
     strings = {

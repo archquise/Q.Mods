@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @loader.tds
-class Shortener(loader.Module):
+class ShortenerMod(loader.Module):
     """Module for using bit.ly API"""
 
     strings = {
