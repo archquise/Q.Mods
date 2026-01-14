@@ -17,11 +17,11 @@
 # ---------------------------------------------------------------------------------
 
 import logging
-import os
 import platform
 import re
 import shutil
 import zipfile
+from http import HTTPStatus
 from pathlib import Path
 
 import aiofiles
@@ -35,25 +35,35 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class YTDLMod(loader.Module):
-    """Downloads and sends audio/video from YouTube"""
+    """Downloads and sends audio/video from YouTube."""
 
-    strings = {
+    strings = { # noqa: RUF012
         "name": "YTDL",
         "_cls_doc": "Downloads and sends audio/video from YouTube",
-        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> There is no arguments or they are invalid",
+        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> There is no arguments or they are invalid", # noqa: E501
         "downloading": "<emoji document_id=5215484787325676090>🕐</emoji> Downloading...",
         "done": "<emoji document_id=5854762571659218443>✅</emoji> Done!",
     }
 
-    strings_ru = {
+    strings_ru = { # noqa: RUF012
         "_cls_doc": "Скачивает и отправляет аудио/видео с Ютуба",
-        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> Нет аргументов или они неверны",
+        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> Нет аргументов или они неверны", # noqa: E501
         "downloading": "<emoji document_id=5215484787325676090>🕐</emoji> Скачиваю...",
         "done": "<emoji document_id=5854762571659218443>✅</emoji> Готово!",
     }
 
+    deno_error = (
+            "Deno wasn't installed in auto-mode.",
+            "Please, install it manually or resolve the issue and reboot userbot.",
+        )
+
+    cookie_desc = (
+        "Куки аккаунта (помогает скачивать видео с жесткими возрастными ограничениями)", # noqa: RUF001
+        "Cookie account (helps downloading video with strict age rating restricrions)",
+    )
+
     def _validate_url(self, url: str) -> bool:
-        """Validate URL format"""
+        """Validate URL format."""
         if not url:
             return False
 
@@ -64,7 +74,8 @@ class YTDLMod(loader.Module):
 
         return url_pattern.match(url) is not None
 
-    async def get_target(self):
+    async def get_target(self) -> str:
+        """Check OS and processor architecture and return right postfix."""
         system = platform.system()
         machine = platform.machine().lower()
 
@@ -85,17 +96,17 @@ class YTDLMod(loader.Module):
 
         return "x86_64-unknown-linux-gnu"
 
-    def __init__(self):
+    def __init__(self): # noqa: ANN204, D107
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "youtube_cookie",
                 None,
-                "Cookie вашего Ютуб-аккаунта (повышает стабильность и помогает скачивать видео с жесткими возрастными ограничениями) | Cookie of your YouTube-account (increases stability and helps downloading video with strict age rating restricrions)",
+                self.cookie_desc,
                 validator=loader.validators.Hidden(),
             ),
         )
 
-    async def client_ready(self, client, db):
+    async def client_ready(self, client, db): # noqa: ANN001, ANN201, D102, ARG002
         deno_path = Path("deno")
         deno_which = shutil.which("deno")
 
@@ -108,31 +119,31 @@ class YTDLMod(loader.Module):
             target = await self.get_target()
             if target == "Windows":
                 logger.critical(
-                    "Windows platform is unsupported by this module. All future commands will fail. Please, unload the module.",
+                    "Windows platform is unsupported, please, unload the module.",
                 )
                 return
             async with aiohttp.ClientSession() as session:
                 download_link = f"https://github.com/denoland/deno/releases/latest/download/deno-{target}.zip"
                 async with session.get(download_link) as resp:
-                    if resp.status == 200:
+                    if resp.status == HTTPStatus.OK:
                         async with aiofiles.open("deno.zip", mode="wb") as f:
                             async for chunk in resp.content.iter_chunked(8192):
                                 await f.write(chunk)
                     else:
-                        logger.critical(f"Failed to download Deno: HTTP {resp.status}")
+                        logger.critical("Failed to download Deno: HTTP %s", resp.status)
                         self.set("deno_source", "install_failed")
                         return
             if Path("deno.zip").is_file():
                 with zipfile.ZipFile("deno.zip", "r") as zip_ref:
                     zip_ref.extractall()
-                os.remove("deno.zip")
-                os.chmod(deno_path, 0o755)
+                Path("deno.zip").unlink()
+                Path(deno_path).chmod(0o755)
                 self.set("deno_source", str(deno_path.resolve()))
         elif deno_which:
             self.set("deno_source", deno_which)
 
     @loader.command(en_doc="Download video", ru_doc="Скачать видео")
-    async def ytdlvcmd(self, message):
+    async def ytdlvcmd(self, message): # noqa: ANN001, ANN201, D102
         args = utils.get_args(message)
         if not args or not self._validate_url(args[0]) or len(args) > 1:
             await utils.answer(message, self.strings["invalid_args"])
@@ -140,9 +151,7 @@ class YTDLMod(loader.Module):
 
         source = self.get("deno_source")
         if source == "install_failed" or not Path(source).is_file():
-            logger.critical(
-                "Deno wasn't installed in auto-mode. Please, install it manually or resolve the issue and reboot userbot.",
-            )
+            logger.critical(self.deno_error)
             return
 
         await utils.answer(message, self.strings["downloading"])
@@ -179,11 +188,16 @@ class YTDLMod(loader.Module):
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(args[0], download=True)
             filename = ydl.prepare_filename(info).split(".")[0] + ".mp4"
-            await utils.answer(message, self.strings["done"], file=filename, invert_media=True)
-            os.remove(filename)
+            await utils.answer(
+                message,
+                self.strings["done"],
+                file=filename,
+                invert_media=True,
+            )
+            Path(filename).unlink()
 
     @loader.command(en_doc="Download audio", ru_doc="Скачать аудио")
-    async def ytdlacmd(self, message):
+    async def ytdlacmd(self, message): # noqa: ANN001, ANN201, D102
         args = utils.get_args(message)
         if not args or not self._validate_url(args[0]) or len(args) > 1:
             await utils.answer(message, self.strings["invalid_args"])
@@ -191,9 +205,7 @@ class YTDLMod(loader.Module):
 
         source = self.get("deno_source")
         if source == "install_failed" or not Path(source).is_file():
-            logger.critical(
-                "Deno wasn't installed in auto-mode. Please, install it manually or resolve the issue and reboot userbot.",
-            )
+            logger.critical(self.deno_error)
             return
 
         await utils.answer(message, self.strings["downloading"])
@@ -225,7 +237,7 @@ class YTDLMod(loader.Module):
             info = ydl.extract_info(args[0], download=True)
             filename = ydl.prepare_filename(info).split(".")[0] + ".mp3"
             await utils.answer(message, self.strings["done"], file=filename)
-            os.remove(filename)
+            Path(filename).unlink()
 
 
 
