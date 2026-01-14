@@ -64,10 +64,10 @@ class IrisSimpleMod(loader.Module):
         """Send command to Iris and get response with timeout"""
         try:
             async with self.client.conversation(
-                self._iris_user_id, timeout=self._timeout,
+                707693258, timeout=response_timeout,
             ) as conv:
-                await conv.send_message(command_message)
-                await message.delete()
+                msg = await conv.send_message(command_message)
+                await msg.delete()
 
                 response_msg = await conv.get_response()
                 if response_msg:
