@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class WindowsKeysMod(loader.Module):
-    """Windows activation keys"""
+    """Windows activation keys."""
 
-    strings = {
+    strings = { # noqa: RUF012
         "name": "WindowsKeys",
         "winkey": "✅ Key: <code>{}</code>\n\n⚠ For KMS activation only",
         "error": "❌ Failed to get key",
@@ -39,7 +39,7 @@ class WindowsKeysMod(loader.Module):
         "loading": "⌛ Loading...",
     }
 
-    strings_ru = {
+    strings_ru = { # noqa: RUF012
         "winkey": "✅ Ключ: <code>{}</code>\n\n⚠ Только для KMS активации",
         "error": "❌ Ошибка получения",
         "select": "🔓 Выберите версию:",
@@ -48,17 +48,17 @@ class WindowsKeysMod(loader.Module):
         "_cls_doc": "KMS ключи активации Windows",
     }
 
-    def __init__(self):
+    def __init__(self): # noqa: ANN204, D107
         self.cache = None
         self.cache_time = 0
         self.CACHE_TTL = 3600
 
-    async def client_ready(self, client, db):
+    async def client_ready(self, client, db): # noqa: D102, ANN001, ANN201
         self.client = client
         self.db = db
 
     @loader.command(ru_doc="Меню ключей Windows", en_doc="Windows keys menu")
-    async def winkey(self, message):
+    async def winkey(self, message): # noqa: ANN201, D102, ANN001
         await self.inline.form(
             self.strings["select"],
             message=message,
@@ -97,7 +97,7 @@ class WindowsKeysMod(loader.Module):
             ],
         )
 
-    async def _key(self, call, version):
+    async def _key(self, call, version) -> None: # noqa: ANN001
         await call.edit(self.strings["loading"])
         keys = await self._get_keys()
         key = keys.get(version) if keys else None
@@ -109,7 +109,7 @@ class WindowsKeysMod(loader.Module):
             ],
         )
 
-    async def _get_keys(self):
+    async def _get_keys(self) -> dict:
         if time.time() - self.cache_time < self.CACHE_TTL:
             return self.cache
 
@@ -121,4 +121,5 @@ class WindowsKeysMod(loader.Module):
                 self.cache_time = time.time()
                 return self.cache
         except Exception:
+            logger.exception("Error!")
             return None

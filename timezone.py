@@ -17,10 +17,10 @@
 # ---------------------------------------------------------------------------------
 
 import logging
-import tzdata # noqa: F401
-
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+
+import tzdata  # noqa: F401
 
 from .. import loader, utils
 
@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class TimeZoneMod(loader.Module):
-    """Prints current time in selected timezone (UTC+n and tzdata formats supported)"""
+    """Prints current time in selected timezone (UTC+n and tzdata formats supported)."""
 
-    strings = {
+    strings = { # noqa: RUF012
         "name": "TimeZone",
         "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> There is no arguments or they are invalid",
         "_cls_doc": "Prints current time in selected timezone (UTC+n and tzdata formats supported)",
@@ -39,7 +39,7 @@ class TimeZoneMod(loader.Module):
         "time_tzdata": "<emoji document_id=5276412364458059956>🕓</emoji> Current time in {}: {}",
     }
 
-    strings_ru = {
+    strings_ru = { # noqa: RUF012
         "_cls_doc": "Выводит текущее время в выбранном часовом поясе (поддерживаются форматы UTC+n и tzdata)",
         "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> Нет аргументов или они неверны",
         "tzdata_error": "<emoji document_id=5854929766146118183>❌</emoji> Произошла ошибка при получении времени по tzdata: {}\n\nУбедитесь, что часовой пояс указан верно",
@@ -51,7 +51,7 @@ class TimeZoneMod(loader.Module):
         ru_doc="Выводит время по UTC+n | Использование: .utc 4",
         en_doc="Prints UTC+n time | Usage: .utc 4",
     )
-    async def utccmd(self, message):
+    async def utccmd(self, message): # noqa: ANN001, ANN201, D102
         args = utils.get_args(message)
         if not args or not args[0].isdigit() or len(args) > 1:
             await utils.answer(message, self.strings["invalid_args"])
@@ -67,7 +67,7 @@ class TimeZoneMod(loader.Module):
         ru_doc="Выводит время по часовому поясу tzdata | Использование: .tzdata Europe/Moscow",
         en_doc="Prints time by tzdata timezone | Usage: .tzdata Europe/Moscow",
     )
-    async def tzdatacmd(self, message):
+    async def tzdatacmd(self, message): # noqa: ANN001, ANN201, D102
         args = utils.get_args(message)
         if args[0].isdigit() or not args or len(args) > 1:
             await utils.answer(message, self.strings["invalid_args"])
@@ -76,7 +76,7 @@ class TimeZoneMod(loader.Module):
             time = datetime.now(ZoneInfo(args[0]))
         except Exception as e:
             await utils.answer(message, self.strings["tzdata_error"].format(e))
-            logger.error(self.strings["tzdata_error"].format(e))
+            logger.exception(self.strings["tzdata_error"])
             return
         await utils.answer(
             message,

@@ -16,6 +16,7 @@
 # ---------------------------------------------------------------------------------
 
 import logging
+from datetime import UTC
 from datetime import datetime as dt
 
 from telethon import functions
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 class TempChatMod(loader.Module):
     """Creates a temporary private chat with a message forwarding restriction and adds the specified user to it."""
 
-    strings = {
+    strings = { # noqa: RUF012
         "name": "TempChat",
         "selfchat": "You can't create a chat with yourself.",
         "wrongargs": "<emoji document_id=5980953710157632545>❌</emoji> <b>Wrong arguments. Use </b><code>.tmpchat [@user/reply] [time]</code><b>",
@@ -41,7 +42,7 @@ class TempChatMod(loader.Module):
         "chatcreated": "<emoji document_id=5980930633298350051>✅</emoji> The temporary chat has been successfully created!",
     }
 
-    strings_ru = {
+    strings_ru = { # noqa: RUF012
         "selfchat": "Ты не можешь создать чат сам с собой.",
         "wrongargs": "<emoji document_id=5980953710157632545>❌</emoji> <b>Неверные аргументы. Используй </b><code>.tmpchat [@user/reply] [время]</code>",
         "alreadychatting": "<emoji document_id=5980953710157632545>❌</emoji> <b>У вас уже есть открытая переписка с этим человеком.</b>",
@@ -52,12 +53,13 @@ class TempChatMod(loader.Module):
         "_cls_doc": "Создает временный приватный чат с запретом на пересылку и добавляет туда выбранного человека",
     }
 
-    def __init__(self):
+    def __init__(self): # noqa: ANN204, D107
         self.temp_chats = {}
 
     @loader.loop(interval=30, autostart=True)
-    async def check_expired_chats(self):
-        now = dt.now().timestamp()
+    async def check_expired_chats(self) -> None:
+        """Check chats with expired life time."""
+        now = dt.now(UTC).timestamp()
         for chat_id in list(self.temp_chats.keys()):
             if self.temp_chats[chat_id][1] <= now:
                 try:
@@ -67,18 +69,18 @@ class TempChatMod(loader.Module):
                     del self.temp_chats[chat_id]
                     self.set("temp_chats", self.temp_chats)
                 except Exception as e:
-                    logger.error(f"Error deleting chat {chat_id}: {e}")
+                    logger.exception("Error deleting chat {chat_id}!")
                     try:
                         self.client(
                             functions.channels.GetFullChannelRequest(
                                 channel=chat_id,
                             ),
                         )
-                    except Exception:
+                    except Exception: # noqa: BLE001
                         del self.temp_chats[chat_id]
                         self.set("temp_chats", self.temp_chats)
 
-    async def client_ready(self, client, db):
+    async def client_ready(self, client, db): # noqa: D102, ARG002, ANN001, ANN201
         self.hmodslib = await self.import_lib(
             "https://files.archquise.ru/HModsLibrary.py",
         )
@@ -87,7 +89,7 @@ class TempChatMod(loader.Module):
     @loader.command(
         ru_doc="Создает временный чат. Использование: .tmpchat [@user/reply] [time]",
     )
-    async def tmpchat(self, message):
+    async def tmpchat(self, message): # noqa: ANN001, ANN201
         """Create temporary chat. Usage: .tmpchat [@user/reply] [time]"""
         args = utils.get_args_raw(message)
         reply = await message.get_reply_message()
@@ -123,7 +125,7 @@ class TempChatMod(loader.Module):
                 ),
             )
             chat_id = created.chats[0].id
-            expires_at = dt.now().timestamp() + seconds
+            expires_at = dt.now(UTC).timestamp() + seconds
 
             await self.client(
                 functions.messages.ToggleNoForwardsRequest(peer=chat_id, enabled=True),
@@ -144,5 +146,5 @@ class TempChatMod(loader.Module):
             await utils.answer(message, self.strings["chatcreated"])
 
         except Exception as e:
-            logger.error(f"Error creating temp chat: {e}")
+            logger.exception("Error creating temp chat!")
             await utils.answer(message, "❌ Error! Check log-chat.")
