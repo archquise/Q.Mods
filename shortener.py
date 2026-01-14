@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class ShortenerMod(loader.Module):
     """Module for using bit.ly API."""
 
-    strings = { # noqa: RUF012
+    strings = {  # noqa: RUF012
         "name": "Shortener",
         "no_api": "<emoji document_id=5854929766146118183>❌</emoji> You have not specified an API token from the site <a href='https://app.bitly.com/settings/api/'>bit.ly</a>",
         "statclcmd": "<emoji document_id=5787384838411522455>📊</emoji> <b>Statistics on clicks for this link:</b> {c}",
@@ -41,7 +41,7 @@ class ShortenerMod(loader.Module):
         "_cls_doc": "Module for using bit.ly API",
     }
 
-    strings_ru = { # noqa: RUF012
+    strings_ru = {  # noqa: RUF012
         "no_api": "<emoji document_id=5854929766146118183>❌</emoji> Вы не указали api токен с сайта <a href='https://app.bitly.com/settings/api/'>bit.ly</a>",
         "statclcmd": "<emoji document_id=5787384838411522455>📊</emoji> <b>Статистика о переходе по этой ссылке:</b> {c}",
         "shortencmd": "<emoji document_id=5854762571659218443>✅</emoji> <b>Ваша сокращённая ссылка готова:</b> <code>{c}</code>",
@@ -51,7 +51,7 @@ class ShortenerMod(loader.Module):
         "_cls_doc": "Модуль для использования API bit.ly",
     }
 
-    def __init__(self): # noqa: ANN204, D107
+    def __init__(self):  # noqa: ANN204, D107
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "token",
@@ -61,7 +61,7 @@ class ShortenerMod(loader.Module):
             ),
         )
 
-    async def client_ready(self, client, db): # noqa: D102, ARG002, ANN001, ANN201
+    async def client_ready(self, client, db):  # noqa: D102, ARG002, ANN001, ANN201
         self._aioclient = aiohttp.ClientSession()
 
     def _validate_url(self, url: str) -> bool:
@@ -83,7 +83,11 @@ class ShortenerMod(loader.Module):
 
     async def shorten_url(self, url: str, token: str) -> str:
         """Short URL trough bit.ly API."""
-        async with self._aioclient.post("https://api-ssl.bitly.com/v4/shorten", json={"long_url": url}, headers={"Authorization": f"Bearer {token}"}) as resp:
+        async with self._aioclient.post(
+            "https://api-ssl.bitly.com/v4/shorten",
+            json={"long_url": url},
+            headers={"Authorization": f"Bearer {token}"},
+        ) as resp:
             if resp.status == HTTPStatus.CREATED:
                 json_response = await resp.json()
                 return json_response["link"]
@@ -92,20 +96,21 @@ class ShortenerMod(loader.Module):
 
     async def get_bitlink_stats(self, bitlink: str, token: str) -> str:
         """Get bitlink clicks stats."""
-        async with self._aioclient.get(f"https://api-ssl.bitly.com/v4/bitlinks/{bitlink}/clicks/summary", headers={"Authorization": f"Bearer {token}"}) as resp:
+        async with self._aioclient.get(
+            f"https://api-ssl.bitly.com/v4/bitlinks/{bitlink}/clicks/summary",
+            headers={"Authorization": f"Bearer {token}"},
+        ) as resp:
             if resp.status == HTTPStatus.OK:
                 json_response = await resp.json()
                 return json_response["total_clicks"]
             logger.error("Error occurred! Status code: %s", resp.status)
             return None
 
-
-
     @loader.command(
-        ru_doc="Сократить ссылку через bit.ly (ссылка с https://)", # noqa: RUF001
+        ru_doc="Сократить ссылку через bit.ly (ссылка с https://)",  # noqa: RUF001
         en_doc="Shorten the link via bit.ly (url with https://)",
     )
-    async def shortencmd(self, message): # noqa: ANN001, ANN201
+    async def shortencmd(self, message):  # noqa: ANN001, ANN201
         """Shorten URL using bit.ly API."""
         if self.config["token"] is None:
             await utils.answer(message, self.strings("no_api"))
@@ -131,7 +136,7 @@ class ShortenerMod(loader.Module):
         ru_doc="Посмотреть статистику ссылки через bit.ly (ссылка без https:// | Доступно только на платных аккаунтах)",
         en_doc="View link statistics via bit.ly (link without https:// | Works only on paid accounts)",
     )
-    async def statclcmd(self, message): # noqa: ANN001, ANN201
+    async def statclcmd(self, message):  # noqa: ANN001, ANN201
         """Get click statistics for shortened URL."""
         if self.config["token"] is None:
             await utils.answer(message, self.strings("no_api"))
@@ -146,7 +151,9 @@ class ShortenerMod(loader.Module):
             if not args.startswith("bit.ly/"):
                 await utils.answer(message, self.strings("invalid_url"))
                 return
-            clicks = await self.get_bitlink_stats(bitlink=args, token=self.config["token"])
+            clicks = await self.get_bitlink_stats(
+                bitlink=args, token=self.config["token"]
+            )
             await utils.answer(message, self.strings("statclcmd").format(c=clicks))
         except Exception as e:
             logger.exception("Error getting statistics!")

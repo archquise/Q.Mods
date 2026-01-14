@@ -37,28 +37,28 @@ logger = logging.getLogger(__name__)
 class YTDLMod(loader.Module):
     """Downloads and sends audio/video from YouTube."""
 
-    strings = { # noqa: RUF012
+    strings = {  # noqa: RUF012
         "name": "YTDL",
         "_cls_doc": "Downloads and sends audio/video from YouTube",
-        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> There is no arguments or they are invalid", # noqa: E501
+        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> There is no arguments or they are invalid",  # noqa: E501
         "downloading": "<emoji document_id=5215484787325676090>🕐</emoji> Downloading...",
         "done": "<emoji document_id=5854762571659218443>✅</emoji> Done!",
     }
 
-    strings_ru = { # noqa: RUF012
+    strings_ru = {  # noqa: RUF012
         "_cls_doc": "Скачивает и отправляет аудио/видео с Ютуба",
-        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> Нет аргументов или они неверны", # noqa: E501
+        "invalid_args": "<emoji document_id=5854929766146118183>❌</emoji> Нет аргументов или они неверны",  # noqa: E501
         "downloading": "<emoji document_id=5215484787325676090>🕐</emoji> Скачиваю...",
         "done": "<emoji document_id=5854762571659218443>✅</emoji> Готово!",
     }
 
     deno_error = (
-            "Deno wasn't installed in auto-mode.",
-            "Please, install it manually or resolve the issue and reboot userbot.",
-        )
+        "Deno wasn't installed in auto-mode.",
+        "Please, install it manually or resolve the issue and reboot userbot.",
+    )
 
     cookie_desc = (
-        "Куки аккаунта (помогает скачивать видео с жесткими возрастными ограничениями)", # noqa: RUF001
+        "Куки аккаунта (помогает скачивать видео с жесткими возрастными ограничениями)",  # noqa: RUF001
         "Cookie account (helps downloading video with strict age rating restricrions)",
     )
 
@@ -96,7 +96,7 @@ class YTDLMod(loader.Module):
 
         return "x86_64-unknown-linux-gnu"
 
-    def __init__(self): # noqa: ANN204, D107
+    def __init__(self):  # noqa: ANN204, D107
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "youtube_cookie",
@@ -106,7 +106,7 @@ class YTDLMod(loader.Module):
             ),
         )
 
-    async def client_ready(self, client, db): # noqa: ANN001, ANN201, D102, ARG002
+    async def client_ready(self, client, db):  # noqa: ANN001, ANN201, D102, ARG002
         deno_path = Path("deno")
         deno_which = shutil.which("deno")
 
@@ -143,7 +143,7 @@ class YTDLMod(loader.Module):
             self.set("deno_source", deno_which)
 
     @loader.command(en_doc="Download video", ru_doc="Скачать видео")
-    async def ytdlvcmd(self, message): # noqa: ANN001, ANN201, D102
+    async def ytdlvcmd(self, message):  # noqa: ANN001, ANN201, D102
         args = utils.get_args(message)
         if not args or not self._validate_url(args[0]) or len(args) > 1:
             await utils.answer(message, self.strings["invalid_args"])
@@ -197,7 +197,7 @@ class YTDLMod(loader.Module):
             Path(filename).unlink()
 
     @loader.command(en_doc="Download audio", ru_doc="Скачать аудио")
-    async def ytdlacmd(self, message): # noqa: ANN001, ANN201, D102
+    async def ytdlacmd(self, message):  # noqa: ANN001, ANN201, D102
         args = utils.get_args(message)
         if not args or not self._validate_url(args[0]) or len(args) > 1:
             await utils.answer(message, self.strings["invalid_args"])
@@ -238,6 +238,3 @@ class YTDLMod(loader.Module):
             filename = ydl.prepare_filename(info).split(".")[0] + ".mp3"
             await utils.answer(message, self.strings["done"], file=filename)
             Path(filename).unlink()
-
-
-

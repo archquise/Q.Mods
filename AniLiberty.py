@@ -32,20 +32,29 @@ logger = logging.getLogger(__name__)
 
 BASE_API_URL = "https://aniliberty.top/api/v1"
 
+
 # Датаклассы для парсинга и хранения json
 @dataclass
 class Genre:
     name: str
+
+
 @dataclass
 class Name:
     main: str
+
+
 @dataclass
 class Type:
     description: str
+
+
 @dataclass
 class Poster:
     preview: str
     thumbnail: str
+
+
 @dataclass
 class ReleaseInfo:
     id: int
@@ -58,11 +67,12 @@ class ReleaseInfo:
     alias: str
     poster: Poster
 
+
 @loader.tds
 class AniLibertyMod(loader.Module):
     """Ищет и возвращает случайное аниме из базы Aniliberty."""
 
-    strings = { # noqa: RUF012
+    strings = {  # noqa: RUF012
         "name": "AniLiberty",
         "announce": "<b>The announcement</b>:",
         "ongoing": "<b>Ongoing</b>:",
@@ -71,7 +81,7 @@ class AniLibertyMod(loader.Module):
         "favorite": "<b>Favourites &lt;3</b>:",  # &lt; == <
     }
 
-    strings_ru = { # noqa: RUF012
+    strings_ru = {  # noqa: RUF012
         "announce": "<b>Анонс</b>:",
         "ongoing": "<b>Онгоинг</b>:",
         "type": "<b>Тип</b>:",
@@ -80,12 +90,14 @@ class AniLibertyMod(loader.Module):
         "_cls_doc": "Ищет и отправляет случайное аниме из базы AniLiberty",
     }
 
-    async def client_ready(self, client, db): # noqa: D102, ARG002, ANN001, ANN201
+    async def client_ready(self, client, db):  # noqa: D102, ARG002, ANN001, ANN201
         self._aioclient = aiohttp.ClientSession()
 
-    async def search_title(self, query) -> list: # noqa: ANN001
+    async def search_title(self, query) -> list:  # noqa: ANN001
         """Search title in the database."""
-        async with self._aioclient.get(f"{BASE_API_URL}/app/search/releases?query={query}&include=id%2Cname.main%2Cis_ongoing%2Ctype.description%2Cdescription%2Cadded_in_users_favorites%2Calias%2Cposter.preview%2Cposter.thumbnail") as resp:
+        async with self._aioclient.get(
+            f"{BASE_API_URL}/app/search/releases?query={query}&include=id%2Cname.main%2Cis_ongoing%2Ctype.description%2Cdescription%2Cadded_in_users_favorites%2Calias%2Cposter.preview%2Cposter.thumbnail"
+        ) as resp:
             json_answer = await resp.json()
             results = []
             for i in json_answer:
@@ -95,7 +107,9 @@ class AniLibertyMod(loader.Module):
 
     async def get_title(self, release_id: str) -> ReleaseInfo | None:
         """Get full title information."""
-        async with self._aioclient.get(f"{BASE_API_URL}/anime/releases/{release_id}?include=id%2Cgenres.name%2Cname.main%2Cis_ongoing%2Ctype.description%2Cdescription%2Cadded_in_users_favorites%2Calias%2Cposter.preview%2Cposter.thumbnail") as resp:
+        async with self._aioclient.get(
+            f"{BASE_API_URL}/anime/releases/{release_id}?include=id%2Cgenres.name%2Cname.main%2Cis_ongoing%2Ctype.description%2Cdescription%2Cadded_in_users_favorites%2Calias%2Cposter.preview%2Cposter.thumbnail"
+        ) as resp:
             try:
                 json_answer = await resp.json()
                 return from_dict(data_class=ReleaseInfo, data=json_answer)
@@ -105,7 +119,9 @@ class AniLibertyMod(loader.Module):
 
     async def get_random_title(self) -> ReleaseInfo | None:
         """Get random title from the database."""
-        async with self._aioclient.get(f"{BASE_API_URL}/anime/releases/random?limit=1&include=id") as resp:
+        async with self._aioclient.get(
+            f"{BASE_API_URL}/anime/releases/random?limit=1&include=id"
+        ) as resp:
             randid = await resp.json()
             """
             Приходится запрашивать по второму кругу, т.к. API в рандомных релизах не отдает жанры, даже если попросить через include
@@ -116,13 +132,12 @@ class AniLibertyMod(loader.Module):
         ru_doc="Возвращает случайный релиз из базы",
         en_doc="Returns a random release from the database",
     )
-    async def arandom(self, message) -> None: # noqa: D102, ANN001
+    async def arandom(self, message) -> None:  # noqa: D102, ANN001
         anime_release = await self.get_random_title()
         genres_str = ""
         for genre in anime_release.genres[:-1]:
             genres_str += f"{genre.name}, "
         genres_str += anime_release.genres[-1].name
-
 
         text = f"{anime_release.name.main} \n"
         text += f"{self.strings['ongoing']} {'Да' if anime_release.is_ongoing else 'Нет'}\n\n"
@@ -156,7 +171,7 @@ class AniLibertyMod(loader.Module):
         ru_doc="Возвращает список найденных по названию тайтлов",
         en_doc="Returns a list of titles found by name",
     )
-    async def asearch_inline_handler(self, query: InlineQuery) -> None: # noqa: D102
+    async def asearch_inline_handler(self, query: InlineQuery) -> None:  # noqa: D102
         text = query.args
 
         if not text:
@@ -176,7 +191,7 @@ class AniLibertyMod(loader.Module):
             genres_str += release_genres.genres[-1].name
             release_text = (
                 f"{anime_release.name.main}\n"
-                f"{self.strings['ongoing']} {"Да" if anime_release.is_ongoing else "Нет"}\n\n"
+                f"{self.strings['ongoing']} {'Да' if anime_release.is_ongoing else 'Нет'}\n\n"
                 f"{self.strings['type']} {anime_release.type.description}\n"
                 f"{self.strings['genres']} {genres_str}\n\n"
                 f"<code>{anime_release.description}</code>\n\n"
@@ -197,10 +212,10 @@ class AniLibertyMod(loader.Module):
         method = query.answer(inline_query, cache_time=0)
         await method.as_(self.inline.bot)
 
-    async def inline__close(self, call: CallbackQuery) -> None: # noqa: D102
+    async def inline__close(self, call: CallbackQuery) -> None:  # noqa: D102
         await call.delete()
 
-    async def inline__update(self, call: CallbackQuery) -> None: # noqa: D102
+    async def inline__update(self, call: CallbackQuery) -> None:  # noqa: D102
         anime_release = await self.get_random_title()
         genres_str = ""
         for genre in anime_release.genres[:-1]:
@@ -208,7 +223,7 @@ class AniLibertyMod(loader.Module):
         genres_str += anime_release.genres[-1].name
 
         text = f"{anime_release.name.main} \n"
-        text += f"{self.strings['ongoing']} {"Да" if anime_release.is_ongoing else "Нет"}\n\n"
+        text += f"{self.strings['ongoing']} {'Да' if anime_release.is_ongoing else 'Нет'}\n\n"
         text += f"{self.strings['type']} {anime_release.type.description}\n"
         text += f"{self.strings['genres']} {genres_str}\n\n"
 
