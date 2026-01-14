@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2025 Archquise #####
 
@@ -17,6 +17,7 @@
 
 import logging
 import re
+
 import aiohttp
 
 from .. import loader, utils
@@ -56,7 +57,7 @@ class ShortenerMod(loader.Module):
                 None,
                 lambda: "Need a token with https://app.bitly.com/settings/api/",
                 validator=loader.validators.Hidden(),
-            )
+            ),
         )
 
     def _validate_url(self, url: str) -> bool:
@@ -78,23 +79,21 @@ class ShortenerMod(loader.Module):
 
     async def shorten_url(self, url: str, token: str) -> str:
         async with aiohttp.ClientSession() as session:
-            async with session.post("https://api-ssl.bitly.com/v4/shorten", json={'long_url': url}, headers={"Authorization": f"Bearer {token}"}) as resp:
+            async with session.post("https://api-ssl.bitly.com/v4/shorten", json={"long_url": url}, headers={"Authorization": f"Bearer {token}"}) as resp:
                 if resp.status == 201:
                     json_response = await resp.json()
-                    return json_response['link']
-                else:
-                    logger.error(f"Error occurred! Status code: {resp.status}")
-                    return
-    
+                    return json_response["link"]
+                logger.error(f"Error occurred! Status code: {resp.status}")
+                return None
+
     async def get_bitlink_stats(self, bitlink: str, token: str) -> str:
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://api-ssl.bitly.com/v4/bitlinks/{bitlink}/clicks/summary", headers={"Authorization": f"Bearer {token}"}) as resp:
                 if resp.status == 200:
                     json_response = await resp.json()
-                    return json_response['total_clicks']
-                else:
-                    logger.error(f"Error occurred! Status code: {resp.status}")
-                    return
+                    return json_response["total_clicks"]
+                logger.error(f"Error occurred! Status code: {resp.status}")
+                return None
 
 
 
@@ -118,7 +117,7 @@ class ShortenerMod(loader.Module):
             return
 
         try:
-            short_url = await self.shorten_url(url=args, token=self.config['token'])
+            short_url = await self.shorten_url(url=args, token=self.config["token"])
             await utils.answer(message, self.strings("shortencmd").format(c=short_url))
         except Exception as e:
             logger.error(f"Error shortening URL: {e}")
@@ -143,9 +142,8 @@ class ShortenerMod(loader.Module):
             if not args.startswith("bit.ly/"):
                 await utils.answer(message, self.strings("invalid_url"))
                 return
-            else:
-                clicks = await self.get_bitlink_stats(bitlink=args, token=self.config['token'])
-                await utils.answer(message, self.strings("statclcmd").format(c=clicks))
+            clicks = await self.get_bitlink_stats(bitlink=args, token=self.config["token"])
+            await utils.answer(message, self.strings("statclcmd").format(c=clicks))
         except Exception as e:
             logger.error(f"Error getting statistics: {e}")
             await utils.answer(message, self.strings("api_error").format(error=str(e)))

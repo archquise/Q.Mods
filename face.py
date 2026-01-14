@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2026 Archquise #####
 
@@ -17,10 +17,10 @@
 # ---------------------------------------------------------------------------------
 
 import logging
+import random
+import re
 
 import aiohttp
-import re
-import random
 
 from .. import loader, utils
 
@@ -49,7 +49,7 @@ class FaceMod(loader.Module):
             "<emoji document_id=5208878706717636743>🗿</emoji> Вот ваш рандомный kaomoji\n<code>{}</code>"
         ),
         "error": "Произошла ошибка!",
-        "_cls_doc": "Выдает случайное каомодзи (японские эмодзи)"
+        "_cls_doc": "Выдает случайное каомодзи (японские эмодзи)",
     }
 
     @loader.command(
@@ -65,10 +65,10 @@ class FaceMod(loader.Module):
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.text()
-                    kaomoji_list = [s.strip() for s in re.split(r'[\t\r\n]+', data) if s.strip()]
+                    kaomoji_list = [s.strip() for s in re.split(r"[\t\r\n]+", data) if s.strip()]
                     kaomoji = random.choice(kaomoji_list)
                     await utils.answer(
-                        message, self.strings("random_face").format(kaomoji)
+                        message, self.strings("random_face").format(kaomoji),
                     )
                 else:
                     await utils.answer(message, self.strings("error"))

@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2025 Archquise #####
 
@@ -45,7 +45,7 @@ class WindowsKeysMod(loader.Module):
         "select": "🔓 Выберите версию:",
         "close": "🎈 Закрыть",
         "loading": "⌛ Загрузка...",
-        "_cls_doc": "KMS ключи активации Windows"
+        "_cls_doc": "KMS ключи активации Windows",
     }
 
     def __init__(self):
@@ -68,21 +68,21 @@ class WindowsKeysMod(loader.Module):
                         "text": "Win 10/11 Pro",
                         "callback": self._key,
                         "args": ("win10_11pro",),
-                    }
+                    },
                 ],
                 [
                     {
                         "text": "Win 10/11 LTSC",
                         "callback": self._key,
                         "args": ("win10_11enterpriseLTSC",),
-                    }
+                    },
                 ],
                 [
                     {
                         "text": "Win 8.1 Pro",
                         "callback": self._key,
                         "args": ("win8.1pro",),
-                    }
+                    },
                 ],
                 [{"text": "Win 8 Pro", "callback": self._key, "args": ("win8pro",)}],
                 [{"text": "Win 7 Pro", "callback": self._key, "args": ("win7pro",)}],
@@ -91,7 +91,7 @@ class WindowsKeysMod(loader.Module):
                         "text": "Vista Business",
                         "callback": self._key,
                         "args": ("winvistabusiness",),
-                    }
+                    },
                 ],
                 [{"text": self.strings["close"], "action": "close"}],
             ],
@@ -115,11 +115,10 @@ class WindowsKeysMod(loader.Module):
 
         try:
             async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(10)
-            ) as session:
-                async with session.get("https://files.archquise.ru/winkeys.json") as r:
-                    self.cache = await r.json()
-                    self.cache_time = time.time()
-                    return self.cache
-        except Exception:  # noqa: E722
+                timeout=aiohttp.ClientTimeout(10),
+            ) as session, session.get("https://files.archquise.ru/winkeys.json") as r:
+                self.cache = await r.json()
+                self.cache_time = time.time()
+                return self.cache
+        except Exception:
             return None

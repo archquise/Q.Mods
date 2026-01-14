@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2025 Archquise #####
 
@@ -16,9 +16,9 @@
 # ---------------------------------------------------------------------------------
 
 import logging
-
-from hikkatl import functions
 from datetime import datetime as dt
+
+from telethon import functions
 
 from .. import loader, utils
 
@@ -49,7 +49,7 @@ class TempChatMod(loader.Module):
         "invitemsg": "<emoji document_id=5818967120213445821>🛡</emoji> Вы были приглашены во временный приватный чат!\n\n<emoji document_id=5451646226975955576>⌛️</emoji> Авто-удаление через ",
         "joinlink": "🔗 Ссылка: ",
         "chatcreated": "<emoji document_id=5980930633298350051>✅</emoji> Временный чат успешно создан!",
-        "_cls_doc": "Создает временный приватный чат с запретом на пересылку и добавляет туда выбранного человека"
+        "_cls_doc": "Создает временный приватный чат с запретом на пересылку и добавляет туда выбранного человека",
     }
 
     def __init__(self):
@@ -62,7 +62,7 @@ class TempChatMod(loader.Module):
             if self.temp_chats[chat_id][1] <= now:
                 try:
                     await self.client(
-                        functions.channels.DeleteChannelRequest(chat_id)
+                        functions.channels.DeleteChannelRequest(chat_id),
                     )
                     del self.temp_chats[chat_id]
                     self.set("temp_chats", self.temp_chats)
@@ -71,8 +71,8 @@ class TempChatMod(loader.Module):
                     try:
                         self.client(
                             functions.channels.GetFullChannelRequest(
-                                channel=chat_id
-                            )
+                                channel=chat_id,
+                            ),
                         )
                     except Exception:
                         del self.temp_chats[chat_id]
@@ -80,12 +80,12 @@ class TempChatMod(loader.Module):
 
     async def client_ready(self, client, db):
         self.hmodslib = await self.import_lib(
-            "https://files.archquise.ru/HModsLibrary.py"
+            "https://files.archquise.ru/HModsLibrary.py",
         )
         self.temp_chats = self.get("temp_chats", {})
 
     @loader.command(
-        ru_doc="Создает временный чат. Использование: .tmpchat [@user/reply] [time]"
+        ru_doc="Создает временный чат. Использование: .tmpchat [@user/reply] [time]",
     )
     async def tmpchat(self, message):
         """Create temporary chat. Usage: .tmpchat [@user/reply] [time]"""
@@ -120,20 +120,20 @@ class TempChatMod(loader.Module):
                     title=f"TempChat #{user.id}",
                     about=f"Temporary private chat with {user.id} | Expires after: {time_str}",
                     megagroup=True,
-                )
+                ),
             )
             chat_id = created.chats[0].id
             expires_at = dt.now().timestamp() + seconds
 
             await self.client(
-                functions.messages.ToggleNoForwardsRequest(peer=chat_id, enabled=True)
+                functions.messages.ToggleNoForwardsRequest(peer=chat_id, enabled=True),
             )
 
             self.temp_chats[chat_id] = (user.id, expires_at)
             self.set("temp_chats", self.temp_chats)
 
             invite = await self.client(
-                functions.messages.ExportChatInviteRequest(peer=chat_id, usage_limit=1)
+                functions.messages.ExportChatInviteRequest(peer=chat_id, usage_limit=1),
             )
             invite_message = (
                 self.strings["invitemsg"]

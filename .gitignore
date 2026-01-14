@@ -1,0 +1,6 @@
+# Enviroment files
+.venv
+# Ruff caches
+.ruff_cache
+ruff.log
+ruff.log.2

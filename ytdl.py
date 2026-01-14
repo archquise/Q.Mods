@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2026 Archquise #####
 
@@ -16,17 +16,16 @@
 # requires: yt_dlp ffmpeg
 # ---------------------------------------------------------------------------------
 
-import shutil
-import platform
-import aiohttp
-import aiofiles
-import zipfile
-import os
-import re
-
 import logging
-
+import os
+import platform
+import re
+import shutil
+import zipfile
 from pathlib import Path
+
+import aiofiles
+import aiohttp
 from yt_dlp import YoutubeDL
 
 from .. import loader, utils
@@ -102,14 +101,14 @@ class YTDLMod(loader.Module):
 
         # Trying to fix previous shitcode...
         if self.get("deno_source") == "file":
-            self.set("deno_source", str(deno_path.resolve())) 
-            
+            self.set("deno_source", str(deno_path.resolve()))
+
         if not deno_which and not deno_path.is_file():
             logger.warning("Deno is not installed, attempting installation...")
             target = await self.get_target()
             if target == "Windows":
                 logger.critical(
-                    "Windows platform is unsupported by this module. All future commands will fail. Please, unload the module."
+                    "Windows platform is unsupported by this module. All future commands will fail. Please, unload the module.",
                 )
                 return
             async with aiohttp.ClientSession() as session:
@@ -142,7 +141,7 @@ class YTDLMod(loader.Module):
         source = self.get("deno_source")
         if source == "install_failed" or not Path(source).is_file():
             logger.critical(
-                "Deno wasn't installed in auto-mode. Please, install it manually or resolve the issue and reboot userbot."
+                "Deno wasn't installed in auto-mode. Please, install it manually or resolve the issue and reboot userbot.",
             )
             return
 
@@ -157,7 +156,7 @@ class YTDLMod(loader.Module):
                 {
                     "key": "FFmpegVideoConvertor",
                     "preferedformat": "mp4",
-                }
+                },
             ],
             "postprocessor_args": {
                 "video_convertor": [
@@ -180,7 +179,7 @@ class YTDLMod(loader.Module):
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(args[0], download=True)
             filename = ydl.prepare_filename(info).split(".")[0] + ".mp4"
-            await utils.answer(message, self.strings['done'], file=filename, invert_media=True)
+            await utils.answer(message, self.strings["done"], file=filename, invert_media=True)
             os.remove(filename)
 
     @loader.command(en_doc="Download audio", ru_doc="Скачать аудио")
@@ -193,7 +192,7 @@ class YTDLMod(loader.Module):
         source = self.get("deno_source")
         if source == "install_failed" or not Path(source).is_file():
             logger.critical(
-                "Deno wasn't installed in auto-mode. Please, install it manually or resolve the issue and reboot userbot."
+                "Deno wasn't installed in auto-mode. Please, install it manually or resolve the issue and reboot userbot.",
             )
             return
 
@@ -225,19 +224,8 @@ class YTDLMod(loader.Module):
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(args[0], download=True)
             filename = ydl.prepare_filename(info).split(".")[0] + ".mp3"
-            await utils.answer(message, self.strings['done'], file=filename)
+            await utils.answer(message, self.strings["done"], file=filename)
             os.remove(filename)
 
-    
-    @loader.command(en_doc="Download from YouTube", ru_doc="Скачать с Ютуба")
-    async def ytdownloadcmd(self, message):
-        args = utils.get_args(message)
-        if not args or not self._validate_url(args[0]) or len(args) > 3:
-            await utils.answer(message, self.strings["invalid_args"])
-            return
-        download_link = args[0]
-        arg1 = args[1]
 
-
-     
 

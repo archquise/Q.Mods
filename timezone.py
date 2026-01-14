@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2026 Archquise #####
 
@@ -17,10 +17,11 @@
 # ---------------------------------------------------------------------------------
 
 import logging
-import tzdata
+import tzdata # noqa: F401
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+
 from .. import loader, utils
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ class TimeZoneMod(loader.Module):
         tz = timezone(offset)
         time = datetime.now(tz)
         await utils.answer(
-            message, self.strings["time_utc"].format(args[0], time.strftime("%H:%M:%S"))
+            message, self.strings["time_utc"].format(args[0], time.strftime("%H:%M:%S")),
         )
 
     @loader.command(

@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2025 Archquise #####
 
@@ -16,7 +16,6 @@
 # ---------------------------------------------------------------------------------
 
 import logging
-from typing import Optional
 
 from .. import loader, utils
 
@@ -56,16 +55,16 @@ class IrisSimpleMod(loader.Module):
         "error_no_response": "<emoji document_id=5854929766146118183>❌</emoji> Нет ответа от бота. Попробуйте еще раз.",
         "error_timeout": "<emoji document_id=5854929766146118183>❌</emoji> Таймаут запроса. Попробуйте еще раз.",
         "error_general": "<emoji document_id=5854929766146118183>❌</emoji> Произошла ошибка: {error}",
-        "_cls_doc": "Модуль для базового взаимодействия с Ирисом!"
+        "_cls_doc": "Модуль для базового взаимодействия с Ирисом!",
     }
 
     async def _send_and_delete(
-        self, message, command_message: str, response_timeout: int = 15
-    ) -> Optional[str]:
+        self, message, command_message: str, response_timeout: int = 15,
+    ) -> str | None:
         """Send command to Iris and get response with timeout"""
         try:
             async with self.client.conversation(
-                self._iris_user_id, timeout=self._timeout
+                self._iris_user_id, timeout=self._timeout,
             ) as conv:
                 await conv.send_message(command_message)
                 await message.delete()
@@ -74,12 +73,11 @@ class IrisSimpleMod(loader.Module):
                 if response_msg:
                     await utils.answer(message, response_msg.text)
                     return response_msg.text
-                else:
-                    return None
+                return None
         except Exception as e:
             logger.error(f"Error in conversation: {e}")
             await utils.answer(
-                message, self.strings["error_general"].format(error=str(e))
+                message, self.strings["error_general"].format(error=str(e)),
             )
             return None
 

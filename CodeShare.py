@@ -1,5 +1,5 @@
-# ###########█▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀###########
-# ###########▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█###########
+# █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
+# ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
 
 # #### Copyright (c) 2026 Archquise #####
 
@@ -16,13 +16,14 @@
 # requires: aiofiles
 # ---------------------------------------------------------------------------------
 
-import aiohttp
-import aiofiles
-import os
 import logging
+import os
+
+import aiofiles
+import aiohttp
+from telethon.types import MessageMediaDocument
 
 from .. import loader, utils
-from telethon.types import MessageMediaDocument
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +55,8 @@ class CodeShareMod(loader.Module):
                 if response.status == 200:
                     link = await response.text()
                     return link
-                else:
-                    logger.error(f"Error occurred! Status code: {response.status}")
-                    return
+                logger.error(f"Error occurred! Status code: {response.status}")
+                return None
 
     @loader.command(
         ru_doc="Загрузка кода на сайт",
@@ -66,15 +66,24 @@ class CodeShareMod(loader.Module):
         args = utils.get_args(message)
         reply = await message.get_reply_message()
         if args:
-            link = await self.upload_to_kmi(args)
-            await utils.answer(message, self.strings["link_ready"].format(link))
-            return
+             async with aiohttp.ClientSession() as session:
+                async with session.get(args[0]) as response:
+                    if response.status == 200:
+                        content = await response.text()
+                        link = await self.upload_to_kmi(content)
+                        await utils.answer(message, self.strings["link_ready"].format(link))
+                        return
+                    logger.error(f"Error occurred! Status code: {response.status}")
+                    return None
         if reply and isinstance(reply.media, MessageMediaDocument):
             file_name = await reply.download_media()
-            async with aiofiles.open(file_name, mode="r") as f:
+            async with aiofiles.open(file_name) as f:
                 content = await f.read()
+            try:
+                os.remove(file_name)
+            except TypeError as e:
+                logger.warning(e)
             link = await self.upload_to_kmi(content)
-            await os.remove(file_name)
             await utils.answer(message, self.strings["link_ready"].format(link))
             return
         await utils.answer(message, self.strings["invalid_args"])
