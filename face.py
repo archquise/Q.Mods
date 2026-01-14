@@ -19,6 +19,7 @@
 import logging
 import random
 import re
+from http import HTTPStatus
 
 import aiohttp
 
@@ -28,10 +29,10 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class FaceMod(loader.Module):
-    """random face"""
+    """Gives you a random kaomoji."""
 
-    strings = {
-        "name": "face",
+    strings = { # noqa: RUF012
+        "name": "Face",
         "loading": (
             "<emoji document_id=5348399448017871250>🔍</emoji> I'm looking for you kaomoji"
         ),
@@ -41,7 +42,7 @@ class FaceMod(loader.Module):
         "error": "An error has occurred!",
     }
 
-    strings_ru = {
+    strings_ru = { # noqa: RUF012
         "loading": (
             "<emoji document_id=5348399448017871250>🔍</emoji> Ищю вам kaomoji"
         ),
@@ -53,20 +54,20 @@ class FaceMod(loader.Module):
     }
 
     @loader.command(
-        ru_doc="Рандом kaomoji",
+        ru_doc="Случайное каомодзи",
         en_doc="Random kaomoji",
     )
-    async def rfacecmd(self, message):
+    async def rfacecmd(self, message) -> None: # noqa: D102, ANN001
         await utils.answer(message, self.strings("loading"))
 
         url = "https://files.archquise.ru/kaomoji.txt"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
+        async with aiohttp.ClientSession() as session, \
+            session.get(url) as response:
+                if response.status == HTTPStatus.OK:
                     data = await response.text()
                     kaomoji_list = [s.strip() for s in re.split(r"[\t\r\n]+", data) if s.strip()]
-                    kaomoji = random.choice(kaomoji_list)
+                    kaomoji = random.choice(kaomoji_list) # noqa: S311
                     await utils.answer(
                         message, self.strings("random_face").format(kaomoji),
                     )
