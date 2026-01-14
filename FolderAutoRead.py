@@ -27,9 +27,9 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class FolderAutoReadMod(loader.Module):
-    """Automatically reads chats in selected folders"""
+    """Automatically reads chats in selected folders."""
 
-    strings = {
+    strings = { # noqa: RUF012
         "name": "FolderAutoRead",
         "not_exists_or_already_added": "<emoji document_id=5278578973595427038>🚫</emoji> <b>This folder does not exists or it is already added for tracking!</b>",
         "_cls_doc": "Automatically reads chats in selected folders every 60 seconds!",
@@ -42,7 +42,7 @@ class FolderAutoReadMod(loader.Module):
         "addfolder": "<emoji document_id=5278227821364275264>📁</emoji> <b>Folder is successfully added to the tracking list!</b>",
     }
 
-    strings_ru = {
+    strings_ru = { # noqa: RUF012
         "not_exists_or_already_added": "<emoji document_id=5278578973595427038>🚫</emoji> <b>Такой папки не существует, или она уже добавлена для отслеживания!</b>",
         "_cls_doc": "Автоматически читает чаты в выбранных папках каждые 60 секунд!",
         "_cmd_doc_addfolder": "Добавляет папки в список отслеживания по их названию. Использование: .addfolder НазваниеПапки",
@@ -54,18 +54,18 @@ class FolderAutoReadMod(loader.Module):
         "addfolder": "<emoji document_id=5278227821364275264>📁</emoji> <b>Папка успешно добавлена в лист отслеживания!</b>",
     }
 
-    def __init__(self):
+    def __init__(self): # noqa: ANN204, D107
         self.tracked_folders = []
 
-    async def client_ready(self, client, db):
+    async def client_ready(self, client, db): # noqa: D102, ARG002, ANN001, ANN201
         self.tracked_folders = self.get("tracked_folders", [])
 
-    async def on_unload(self):
+    async def on_unload(self): # noqa: ANN201, D102
         self.tracked_folders = []
         self.set("tracked_folders", [])
 
     @loader.loop(interval=60, autostart=True)
-    async def read_chats_in_folders(self):
+    async def read_chats_in_folders(self) -> None: # noqa: D102
         if self.tracked_folders:
             all_folders = await self._client(functions.messages.GetDialogFiltersRequest())
             for i in range(len(self.tracked_folders)):
@@ -90,7 +90,7 @@ class FolderAutoReadMod(loader.Module):
                         await self._client(functions.messages.ReadHistoryRequest(peer=peer, max_id=0))
 
     @loader.command()
-    async def addfolder(self, message):
+    async def addfolder(self, message): # noqa: ANN001, ANN201, D102
         arg = utils.get_args_raw(message)
         if arg:
             all_folders = await self._client(functions.messages.GetDialogFiltersRequest())
@@ -105,9 +105,10 @@ class FolderAutoReadMod(loader.Module):
                 await utils.answer(message, self.strings["addfolder"])
             else:
                 await utils.answer(message, self.strings["not_exists_or_already_added"])
+                return
 
     @loader.command()
-    async def delfolder(self, message):
+    async def delfolder(self, message): # noqa: ANN001, ANN201, D102
         arg = utils.get_args_raw(message)
         if arg and arg in self.tracked_folders:
             self.tracked_folders.remove(arg)
@@ -115,9 +116,10 @@ class FolderAutoReadMod(loader.Module):
             await utils.answer(message, self.strings["delfolder"])
         else:
             await utils.answer(message, self.strings["wrong_args"])
+            return
 
     @loader.command()
-    async def listfolders(self, message):
+    async def listfolders(self, message): # noqa: ANN001, ANN201, D102
         await utils.answer(message, self.strings["listfolders"] + "\n".join(
             f"• {folder}" for folder in self.tracked_folders
         ))

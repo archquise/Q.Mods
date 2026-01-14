@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class IrisSimpleMod(loader.Module):
-    """Module for basic interaction with Iris bot"""
+    """Module for basic interaction with Iris bot."""
 
-    strings = {
-        "name": "IrisSimpleMod",
+    strings = { # noqa: RUF012
+        "name": "IrisSimpleMod", 
         "checking_bag": "<emoji document_id=5188311512791393083>🌎</emoji> Checking bag...",
         "bag_result": "<emoji document_id=5854762571659218443>✅</emoji> Your bag: <code>{}</code>",
         "farming": "<emoji document_id=5188311512791393083>🌎</emoji> Farming iris-coins...",
@@ -43,7 +43,7 @@ class IrisSimpleMod(loader.Module):
         "error_general": "<emoji document_id=5854929766146118183>❌</emoji> An error occurred: {error}",
     }
 
-    strings_ru = {
+    strings_ru = { # noqa: RUF012
         "checking_bag": "<emoji document_id=5188311512791393083>🌎</emoji> Проверка мешка...",
         "bag_result": "<emoji document_id=5854762571659218443>✅</emoji> Ваш мешок: <code>{}</code>",
         "farming": "<emoji document_id=5188311512791393083>🌎</emoji> Фарм ирис-коинов...",
@@ -59,9 +59,9 @@ class IrisSimpleMod(loader.Module):
     }
 
     async def _send_and_delete(
-        self, message, command_message: str, response_timeout: int = 15,
+        self, message, command_message: str, response_timeout: int = 15, # noqa: ANN001
     ) -> str | None:
-        """Send command to Iris and get response with timeout"""
+        """Send command to Iris and get response with timeout."""
         try:
             async with self.client.conversation(
                 707693258, timeout=response_timeout,
@@ -75,7 +75,7 @@ class IrisSimpleMod(loader.Module):
                     return response_msg.text
                 return None
         except Exception as e:
-            logger.error(f"Error in conversation: {e}")
+            logger.exception("Error in conversation!")
             await utils.answer(
                 message, self.strings["error_general"].format(error=str(e)),
             )
@@ -85,8 +85,8 @@ class IrisSimpleMod(loader.Module):
         ru_doc="Проверить мешок",
         en_doc="Check bag",
     )
-    async def bag(self, message):
-        """Check bag"""
+    async def bag(self, message): # noqa: ANN001, ANN201
+        """Check bag."""
         await utils.answer(message, self.strings["checking_bag"])
 
         result = await self._send_and_delete(message, "мешок", response_timeout=20)
@@ -98,8 +98,8 @@ class IrisSimpleMod(loader.Module):
         ru_doc="Зафармить ирис-коины",
         en_doc="Farm iris-coins",
     )
-    async def farm(self, message):
-        """Farm iris-coins"""
+    async def farm(self, message): # noqa: ANN001, ANN201
+        """Farm iris-coins."""
         await utils.answer(message, self.strings["farming"])
 
         result = await self._send_and_delete(message, "ферма", response_timeout=25)
@@ -111,8 +111,8 @@ class IrisSimpleMod(loader.Module):
         ru_doc="Вывести анкету",
         en_doc="Display user stats",
     )
-    async def irisstats(self, message):
-        """Display user stats"""
+    async def irisstats(self, message): # noqa: ANN001, ANN201
+        """Display user stats."""
         await utils.answer(message, self.strings["getting_stats"])
 
         result = await self._send_and_delete(message, "анкета", response_timeout=20)
