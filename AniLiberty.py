@@ -91,7 +91,7 @@ class AniLibertyMod(loader.Module):
     }
 
     async def client_ready(self, client, db):  # noqa: D102, ARG002, ANN001, ANN201
-        self._aioclient = aiohttp.ClientSession()
+        self._aioclient = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(20))
 
     async def search_title(self, query) -> list:  # noqa: ANN001
         """Search title in the database."""

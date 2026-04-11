@@ -53,7 +53,7 @@ class CodeShareMod(loader.Module):
         data.add_field("kmi", content)
 
         async with (
-            aiohttp.ClientSession() as session,
+            aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(20)) as session,
             session.post(url, data=data) as response,
         ):
             if response.status == HTTPStatus.OK:
@@ -70,7 +70,7 @@ class CodeShareMod(loader.Module):
         reply = await message.get_reply_message()
         if args:
             async with (
-                aiohttp.ClientSession() as session,
+                aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(20)) as session,
                 session.get(args[0]) as response,
             ):
                 if response.status == HTTPStatus.OK:

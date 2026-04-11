@@ -45,7 +45,7 @@ class FaceMod(loader.Module):
 
     strings_ru = {  # noqa: RUF012
         "loading": (
-            "<emoji document_id=5348399448017871250>🔍</emoji> Ищю вам kaomoji"
+            "<emoji document_id=5348399448017871250>🔍</emoji> Ищу вам kaomoji"
         ),
         "random_face": (
             "<emoji document_id=5208878706717636743>🗿</emoji> Вот ваш рандомный kaomoji\n<code>{}</code>"

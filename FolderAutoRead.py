@@ -70,13 +70,13 @@ class FolderAutoReadMod(loader.Module):
             all_folders = await self._client(
                 functions.messages.GetDialogFiltersRequest()
             )
-            for i in range(len(self.tracked_folders)):
+            for folder_name in self.tracked_folders:
                 match = next(
                     (
                         f
                         for f in all_folders.filters
                         if isinstance(f, DialogFilter)
-                        and f.title.text == self.tracked_folders[i]
+                        and f.title.text == folder_name
                     ),
                     None,
                 )
