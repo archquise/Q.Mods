@@ -28,40 +28,11 @@ logger = logging.getLogger(__name__)
 
 @loader.tds
 class WindowsKeysMod(loader.Module):
-    """Windows activation keys."""
+    """Windows KMS activation keys."""
 
-    strings = {  # noqa: RUF012
-        "name": "WindowsKeys",
-        "winkey": "✅ Key: <code>{}</code>\n\n⚠ For KMS activation only",
-        "error": "❌ Failed to get key",
-        "select": "🔓 Select version:",
-        "close": "🎈 Close",
-        "loading": "⌛ Loading...",
-    }
-
-    strings_ru = {  # noqa: RUF012
-        "winkey": "✅ Ключ: <code>{}</code>\n\n⚠ Только для KMS активации",
-        "error": "❌ Ошибка получения",
-        "select": "🔓 Выберите версию:",
-        "close": "🎈 Закрыть",
-        "loading": "⌛ Загрузка...",
-        "_cls_doc": "KMS ключи активации Windows",
-    }
-
-    def __init__(self):  # noqa: ANN204, D107
-        self.cache = None
-        self.cache_time = 0
-        self.CACHE_TTL = 3600
-
-    async def client_ready(self, client, db):  # noqa: D102, ANN001, ANN201
-        self.client = client
-        self.db = db
-
-    @loader.command(ru_doc="Меню ключей Windows", en_doc="Windows keys menu")
-    async def winkey(self, message):  # noqa: ANN201, D102, ANN001
-        await self.inline.form(
+    async def _main_menu_call(self, call):
+        await call.edit(
             self.strings["select"],
-            message=message,
             reply_markup=[
                 [
                     {
@@ -69,8 +40,6 @@ class WindowsKeysMod(loader.Module):
                         "callback": self._key,
                         "args": ("win10_11pro",),
                     },
-                ],
-                [
                     {
                         "text": "Win 10/11 LTSC",
                         "callback": self._key,
@@ -83,10 +52,18 @@ class WindowsKeysMod(loader.Module):
                         "callback": self._key,
                         "args": ("win8.1pro",),
                     },
+                    {
+                        "text": "Win 8 Pro", 
+                        "callback": self._key, 
+                        "args": ("win8pro",)
+                    }
                 ],
-                [{"text": "Win 8 Pro", "callback": self._key, "args": ("win8pro",)}],
-                [{"text": "Win 7 Pro", "callback": self._key, "args": ("win7pro",)}],
                 [
+                    {
+                        "text": "Win 7 Pro", 
+                        "callback": self._key, 
+                        "args": ("win7pro",)
+                        },
                     {
                         "text": "Vista Business",
                         "callback": self._key,
@@ -94,25 +71,54 @@ class WindowsKeysMod(loader.Module):
                     },
                 ],
                 [{"text": self.strings["close"], "action": "close"}],
-            ],
+            ]
         )
+
+    strings = {  # noqa: RUF012
+        "name": "WindowsKeys",
+        "winkey": "<tg-emoji emoji-id=5776375003280838798>✅</tg-emoji> Key: <code>{}</code>\n\n<tg-emoji emoji-id=5879813604068298387>❗️</tg-emoji> For KMS activation only",
+        "error": "<tg-emoji emoji-id=5778527486270770928>❌</tg-emoji> Failed to get key",
+        "select": "<tg-emoji emoji-id=6005570495603282482>🔑</tg-emoji> Select version:",
+        "close": "❌ Close",
+        "back": "← Back",
+        "loading": "<tg-emoji emoji-id=5787344001862471785>✍️</tg-emoji> Loading...",
+    }
+
+    strings_ru = {  # noqa: RUF012
+        "winkey": "<tg-emoji emoji-id=5776375003280838798>✅</tg-emoji> Ключ: <code>{}</code>\n\n<tg-emoji emoji-id=5879813604068298387>❗️</tg-emoji> Только для KMS активации",
+        "error": "<tg-emoji emoji-id=5778527486270770928>❌</tg-emoji> Ошибка получения",
+        "select": "<tg-emoji emoji-id=6005570495603282482>🔑</tg-emoji> Выберите версию:",
+        "close": "❌ Закрыть",
+        "back": "← Назад",
+        "loading": "<tg-emoji emoji-id=5787344001862471785>✍️</tg-emoji> Загрузка...",
+        "_cls_doc": "KMS ключи активации Windows",
+    }
+
+    async def client_ready(self, client, db):  # noqa: D102, ANN001, ANN201, ANN204, D107
+        self.client = client
+        self.db = db
+
+        self.cache = None
+        self.cache_time = 0
+        self.CACHE_TTL = 3600
+
+    @loader.command(ru_doc="Меню ключей Windows", en_doc="Windows keys menu")
+    async def winkey(self, message):  # noqa: ANN201, D102, ANN001
+        await self._main_menu_call(await self.inline.form("🪐", message=message))
 
     async def _key(self, call, version) -> None:  # noqa: ANN001
         await call.edit(self.strings["loading"])
-        keys = await self._get_keys()
-        key = keys.get(version) if keys else None
+        key = (await self._get_keys()).get(version)
         await call.edit(
             self.strings["winkey"].format(key) if key else self.strings["error"],
             reply_markup=[
-                [{"text": "← Back", "callback": self.winkey}],
-                [{"text": self.strings["close"], "action": "close"}],
+                [{"text": self.strings["back"], "callback": self._main_menu_call}, {"text": self.strings["close"], "action": "close"}],
             ],
         )
 
     async def _get_keys(self) -> dict:
         if time.time() - self.cache_time < self.CACHE_TTL:
             return self.cache
-
         try:
             async with (
                 aiohttp.ClientSession(
@@ -125,4 +131,4 @@ class WindowsKeysMod(loader.Module):
                 return self.cache
         except Exception:
             logger.exception("Error!")
-            return None
+            return {}
