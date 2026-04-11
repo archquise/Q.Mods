@@ -129,7 +129,7 @@ class YTDLMod(loader.Module):
                 "Windows platform is unsupported, please, unload the module.",
             )
             return
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(20)) as session:
             download_link = f"https://github.com/denoland/deno/releases/latest/download/deno-{target}.zip"
             async with session.get(download_link) as resp:
                 if resp.status == HTTPStatus.OK:
