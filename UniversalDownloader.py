@@ -12,7 +12,6 @@
 # Author: @quise_m
 # ---------------------------------------------------------------------------------
 # meta developer: @quise_m
-# meta banner: https://raw.githubusercontent.com/archquise/qmods_meta/main/ytdl.png
 # requires: yt_dlp ffmpeg
 # ---------------------------------------------------------------------------------
 
