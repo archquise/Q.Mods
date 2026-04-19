@@ -164,7 +164,10 @@ class UniversalDownloaderMod(loader.Module):
                 await call.edit(self.strings["deno_err"])
                 return
 
-            await call.edit(self.strings["downloading"])
+            await call.answer()
+            await call.delete()
+
+            downloading_msg = await self._client.send_message(message.chat_id, self.strings["downloading"], reply_to=message.reply_to_msg_id)  # noqa: E501
 
             ydl_opts = {
                 "quiet": True,
@@ -203,12 +206,11 @@ class UniversalDownloaderMod(loader.Module):
                     info = await utils.run_sync(lambda: ydl.extract_info(args[0], download=True))  # noqa: E501
                     filename = ydl.prepare_filename(info).split(".")[0] + (".mp3" if download_type == "audio" else ".mp4")  # noqa: E501
                     await self._client.send_file(message.chat_id, filename, reply_to=message.reply_to_msg_id)  # noqa: E501
-                    await call.answer()
-                    await call.delete()
+                    await downloading_msg.delete()
             except Exception as e:
                 logger.exception("Catched error during download!")
                 await call.answer()
-                await call.edit(self.strings["err"].format(e))
+                await downloading_msg.edit(self.strings["err"].format(e))
             finally:
                 if os.path.exists(filename):
                     os.remove(filename)
