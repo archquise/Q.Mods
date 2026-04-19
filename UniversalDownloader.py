@@ -12,6 +12,7 @@
 # Author: @quise_m
 # ---------------------------------------------------------------------------------
 # meta developer: @quise_m
+# meta banner: https://raw.githubusercontent.com/archquise/qmods_meta/main/UniversalDownloader.png
 # requires: yt_dlp ffmpeg
 # ---------------------------------------------------------------------------------
 
