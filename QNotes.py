@@ -1,4 +1,4 @@
-__version__ = (1, 0, 0)
+__version__ = (1, 0, 1)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -38,6 +38,7 @@ class QNotes(loader.Module):
         "already_exists": "Seems like note with the same tag already exists. Overwrite?",
         "show_note_inline": "<blockquote>#{}</blockquote>\n\n<blockquote>{}</blockquote>",
         "notelist": "Note list:",
+        "msg_not_found_inline": "Message with this note wasn't found. Probably, it was been removed. Note has been removed from the database.",
         "remnote_inline": "🗑 Remove",
         "close_inline": "❌ Close",
         "yes": "✔️ Yes",
@@ -56,6 +57,7 @@ class QNotes(loader.Module):
         "already_exists": "Кажется, заметка с таким тегом уже существует. Перезаписать?",
         "show_note_inline": "<blockquote>#{}</blockquote>\n\n<blockquote>{}</blockquote>",
         "notelist": "Список заметок:",
+        "msg_not_found_inline": "Сообщение с этой заметкой не было найдено. Вероятно, оно было удалено. Заметка очищена из базы данных.",
         "remnote_inline": "🗑 Удалить",
         "close_inline": "❌ Закрыть",
         "yes": "✔️ Да",
@@ -133,6 +135,18 @@ class QNotes(loader.Module):
         note_msg = await self._client.get_messages(
             self._content_channel_id, ids=notetag[1]
         )
+
+        if not note_msg:
+            self._notemap.pop(notetag[0], None)
+
+            await call.edit(
+                self.strings["msg_not_found_inline"],
+                reply_markup=[
+                    {"text": "⬅️ Назад", "callback": self._list_page, "args": (page,)},
+                    {"text": self.strings["close_inline"], "action": "close"},
+                ],
+            )
+            return
 
         await call.edit(
             self.strings["show_note_inline"].format(notetag[0], note_msg.text),  # type: ignore
