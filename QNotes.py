@@ -1,4 +1,4 @@
-__version__ = (1, 1, 2)
+__version__ = (1, 1, 3)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -362,10 +362,13 @@ class QNotes(loader.Module):
                 return
             notetext = note_message.text  # type: ignore
             if re.search(r"\{\w+\}", notetext):
-                reply_msg = await message.get_reply_message()
                 placeholders = {**self.placeholders}
-                if reply_msg and isinstance(reply_msg.peer_id, PeerUser):
-                    reply_user = await self._client.get_entity(reply_msg.peer_id)
+                if reply_msg := await message.get_reply_message():
+                    reply_user = (
+                        await self._client.get_entity(reply_msg.peer_id)
+                        if isinstance(reply_msg.peer_id, PeerUser)
+                        else await self._client.get_entity(reply_msg.from_id)
+                    )
                     placeholders = {
                         **placeholders,
                         "reply_id": reply_user.id,
