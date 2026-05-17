@@ -1,4 +1,4 @@
-__version__ = (1, 1, 0)
+__version__ = (1, 1, 1)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -55,6 +55,27 @@ class QNotes(loader.Module):
         "saved": "Note saved!",
         "removed": "Note removed!",
         "nonotes": "You don't have any notes!",
+        "placeholders": """
+        <b>Available placeholders</b>:
+
+        about the account on which userbot is installed:
+        {my_id} - ID
+        @{my_username} - username, tag
+        {my_phone} - phone number
+        {my_premium} - premium status (yes/no)
+
+        about reply author:
+        {reply_id} - ID
+        {reply_name} - name
+        {reply_surname} - surname
+        {reply_fullname} - full name (name + surname (if specified))
+        @{reply_username} - username, tag
+        {reply_phone} - phone number (if not hidden)
+        {reply_premium} - premium status (yes/no)
+
+        general:
+        {today} - current date
+        """,
     }
 
     strings_ru = {
@@ -76,6 +97,27 @@ class QNotes(loader.Module):
         "true": "да",
         "false": "нет",
         "nonotes": "Нет заметок!",
+        "placeholders": """
+        <b>Доступные плейсхолдеры</b>:
+    
+        об аккаунте, на котором стоит юзербот:
+        {my_id} - айди
+        @{my_username} - юзернейм, тег
+        {my_phone} - номер телефона
+        {my_premium} - статус премиум (да/нет)
+
+        об авторе реплая:
+        {reply_id} - айди
+        {reply_name} - имя
+        {reply_surname} - фамилия
+        {reply_fullname} - полное имя (имя + фамилия (если указана))
+        @{reply_username} - юзернейм, тег
+        {reply_phone} - номер телефона (если не скрыт)
+        {reply_premium} - статус премиум (да/нет)
+
+        общее:
+        {today} - текущая дата
+        """,
     }
 
     async def client_ready(self, client, db):  # type: ignore
@@ -292,6 +334,13 @@ class QNotes(loader.Module):
             )
             return
         await utils.answer(message, self.strings["nonotes"])
+
+    @loader.command(
+        ru_doc="Выводит список доступных плейсхолдеров",
+        en_doc="Displays a list of available placeholders",
+    )
+    async def qnp(self, message) -> None:
+        await utils.answer(message, self.strings["placeholders"])
 
     @loader.watcher(startswith="#")
     async def _note_watcher(self, message):
