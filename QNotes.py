@@ -1,4 +1,4 @@
-__version__ = (1, 0, 1)
+__version__ = (1, 1, 0)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -18,9 +18,16 @@ __version__ = (1, 0, 1)
 # ---------------------------------------------------------------------------------
 
 import logging
+import re
 import asyncio
 
+from typing import cast
+from datetime import date
+
 from .. import loader, utils
+
+from herokutl.tl.functions.users import GetUsersRequest
+from herokutl.tl.types import InputUserSelf
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +50,8 @@ class QNotes(loader.Module):
         "close_inline": "❌ Close",
         "yes": "✔️ Yes",
         "no": "❌ No",
+        "true": "yes",
+        "false": "no",
         "saved": "Note saved!",
         "removed": "Note removed!",
         "nonotes": "You don't have any notes!",
@@ -64,6 +73,8 @@ class QNotes(loader.Module):
         "no": "❌ Нет",
         "saved": "Заметка сохранена!",
         "removed": "Заметка удалена!",
+        "true": "да",
+        "false": "нет",
         "nonotes": "Нет заметок!",
     }
 
@@ -78,7 +89,20 @@ class QNotes(loader.Module):
             icon_emoji_id=5272001961326049733,
         )
 
-        self._notemap = self.pointer("notemap", default={})
+        self.my_phone = (await self._client(GetUsersRequest(id=[InputUserSelf()])))[
+            0
+        ].phone
+
+        self.placeholders = {
+            "my_phone": self.my_phone,
+            "my_username": self._client.heroku_me.username,
+            "my_id": self.tg_id,
+            "my_premium": self.strings["true"]
+            if self._client.heroku_me.premium
+            else self.strings["false"],
+        }
+
+        self._notemap = cast(dict, self.pointer("notemap", default={}))
 
     async def _ask_overwrite(self, message):
 
@@ -128,7 +152,7 @@ class QNotes(loader.Module):
     async def _show_note_inline(self, call, notetag, page=0):
         async def _remnote(call, notetag, note_msg):
             await note_msg.delete()
-            self._notemap.pop(notetag, None)  # type: ignore
+            self._notemap.pop(notetag, None)
 
             await call.edit(self.strings["removed"])
 
@@ -164,7 +188,7 @@ class QNotes(loader.Module):
         )
 
     def _build_list_markup(self, page: int):
-        items = list(self._notemap.items())  # type: ignore
+        items = list(self._notemap.items())
         total = -(-len(items) // 3)
         page = max(0, min(page, total - 1))
         rows = [
@@ -208,14 +232,14 @@ class QNotes(loader.Module):
             await utils.answer(message, self.strings["no_reply"])
             return
         try:
-            if args[0].strip() in self._notemap:  # type: ignore
+            if args[0].strip() in self._notemap:
                 overwrite = await self._ask_overwrite(message)
                 if not overwrite[0]:
                     return
                 await (
                     await self._client.get_messages(
                         self._content_channel_id,
-                        ids=self._notemap[args[0].strip()],  # type: ignore
+                        ids=self._notemap[args[0].strip()],
                     )
                 ).delete()  # type: ignore
                 current_message = overwrite[1]
@@ -223,7 +247,7 @@ class QNotes(loader.Module):
             note_message = await self._client.send_message(
                 self._content_channel_id, reply.text, reply_to=self._notes_topic.id
             )
-            self._notemap[args[0].strip()] = note_message.id  # type: ignore
+            self._notemap[args[0].strip()] = note_message.id
 
         except Exception as e:
             await utils.answer(current_message, f"Произошла ошибка: {e}")
@@ -241,17 +265,17 @@ class QNotes(loader.Module):
             await utils.answer(message, self.strings["wrongargs"])
             return
 
-        if args[0] not in self._notemap or not (  # type: ignore
+        if args[0] not in self._notemap or not (
             note_message := await self._client.get_messages(
                 self._content_channel_id,
-                ids=self._notemap[args[0]],  # type: ignore
+                ids=self._notemap[args[0]],
             )
         ):
             await utils.answer(message, self.strings["not_exist"])
             return
 
         await note_message.delete()  # type: ignore
-        self._notemap.pop(args[0], None)  # type: ignore
+        self._notemap.pop(args[0], None)
 
         await utils.answer(message, self.strings["removed"])
 
@@ -278,15 +302,45 @@ class QNotes(loader.Module):
 
         notetag = message.text.split("#", maxsplit=1)[1]
 
-        if notetag in self._notemap:  # type: ignore
+        if notetag in self._notemap:
             if not (
                 note_message := await self._client.get_messages(
                     self._content_channel_id,
-                    ids=self._notemap[notetag],  # type: ignore
+                    ids=self._notemap[notetag],
                 )
             ):
-                self._notemap.pop(notetag, None)  # type: ignore
+                self._notemap.pop(notetag, None)
                 return
             notetext = note_message.text  # type: ignore
+            if re.search(r"\{\w+\}", notetext):
+                if reply_msg := await message.get_reply_message():
+                    reply_user = await self._client.get_entity(reply_msg.peer_id)
+                    placeholders = {
+                        **self.placeholders,
+                        "today": date.today(),
+                        "reply_id": reply_user.id,
+                        "reply_fullname": " ".join(
+                            filter(None, [reply_user.first_name, reply_user.last_name])
+                        ),
+                        "reply_name": reply_user.first_name,
+                        "reply_surname": reply_user.last_name,
+                        "reply_phone": (
+                            await self._client(GetUsersRequest(id=[reply_user.id]))
+                        )[0].phone,
+                        "reply_username": reply_user.username,
+                        "reply_premium": self.strings["true"]
+                        if reply_user.premium
+                        else self.strings["false"],
+                    }
+                else:
+                    placeholders = {**self.placeholders, "today": date.today()}
+
+                def replacer(match):
+                    key = match.group(1)
+                    if key not in placeholders:
+                        return match.group(0)
+                    return utils.escape_html(str(placeholders[key]))
+
+                notetext = re.sub(r"\{(\w+)\}", replacer, notetext)
             await utils.answer(message, notetext)
             return
