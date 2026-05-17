@@ -1,4 +1,4 @@
-__version__ = (1, 1, 1)
+__version__ = (1, 1, 2)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -27,7 +27,7 @@ from datetime import date
 from .. import loader, utils
 
 from herokutl.tl.functions.users import GetUsersRequest
-from herokutl.tl.types import InputUserSelf
+from herokutl.tl.types import InputUserSelf, PeerUser
 
 logger = logging.getLogger(__name__)
 
@@ -362,11 +362,12 @@ class QNotes(loader.Module):
                 return
             notetext = note_message.text  # type: ignore
             if re.search(r"\{\w+\}", notetext):
-                if reply_msg := await message.get_reply_message():
+                reply_msg = await message.get_reply_message()
+                placeholders = {**self.placeholders}
+                if reply_msg and isinstance(reply_msg.peer_id, PeerUser):
                     reply_user = await self._client.get_entity(reply_msg.peer_id)
                     placeholders = {
-                        **self.placeholders,
-                        "today": date.today(),
+                        **placeholders,
                         "reply_id": reply_user.id,
                         "reply_fullname": " ".join(
                             filter(None, [reply_user.first_name, reply_user.last_name])
@@ -381,12 +382,12 @@ class QNotes(loader.Module):
                         if reply_user.premium
                         else self.strings["false"],
                     }
-                else:
-                    placeholders = {**self.placeholders, "today": date.today()}
+
+                placeholders = {**placeholders, "today": date.today()}
 
                 def replacer(match):
                     key = match.group(1)
-                    if key not in placeholders:
+                    if key not in placeholders or not placeholders[key]:
                         return match.group(0)
                     return utils.escape_html(str(placeholders[key]))
 
