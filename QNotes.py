@@ -1,4 +1,4 @@
-__version__ = (1, 1, 3)
+__version__ = (1, 1, 4)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -27,7 +27,7 @@ from datetime import date
 from .. import loader, utils
 
 from herokutl.tl.functions.users import GetUsersRequest
-from herokutl.tl.types import InputUserSelf, PeerUser
+from herokutl.tl.types import InputUserSelf
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ class QNotes(loader.Module):
         "saved": "Note saved!",
         "removed": "Note removed!",
         "nonotes": "You don't have any notes!",
+        "privacy_switch": "Determines whose data will be used by the my_* placeholders\n\nTrue - the account that is issuing the note\nFalse - the account on which the userbot is running",
         "placeholders": """
         <b>Available placeholders</b>:
 
@@ -82,7 +83,7 @@ class QNotes(loader.Module):
         "_cls_doc": "Модуль для заметок, который просто работает\nИспользование: #тегзаметки в любом чате",
         "topic_desc": "Хранит содержимое ваших заметок\nИспользование: #тегзаметки в любом чате",
         "wrongargs": "<emoji document_id=5980953710157632545>❌</emoji> <b>Неверные аргументы. Проверьте использование команды.</b>",
-        "no_reply": "Нет реплая! Ответьте на сообещние, текст которого станет заметкой.",
+        "no_reply": "Нет реплая! Ответьте на сообщение, текст которого станет заметкой.",
         "not_exist": "Такой заметки не найдено!",
         "already_exists": "Кажется, заметка с таким тегом уже существует. Перезаписать?",
         "show_note_inline": "<blockquote>#{}</blockquote>\n\n<blockquote>{}</blockquote>",
@@ -97,6 +98,7 @@ class QNotes(loader.Module):
         "true": "да",
         "false": "нет",
         "nonotes": "Нет заметок!",
+        "privacy_switch": "Влияет на то, чьи данные будут использовать my_* плейсхолдеры\n\nTrue - аккаунта, который вызывает заметку\nFalse - аккаунта на котором стоит юзербот",
         "placeholders": """
         <b>Доступные плейсхолдеры</b>:
     
@@ -119,6 +121,16 @@ class QNotes(loader.Module):
         {today} - текущая дата
         """,
     }
+
+    def __init__(self):
+        self.config = loader.ModuleConfig(
+            loader.ConfigValue(
+                "privacy_switch",
+                True,
+                lambda: self.strings["privacy_switch"],
+                validator=loader.validators.Boolean(),  # type: ignore
+            )
+        )
 
     async def client_ready(self, client, db):  # type: ignore
         self._content_channel_id = await utils.wait_for_content_channel(self._db)
@@ -183,15 +195,15 @@ class QNotes(loader.Module):
                 overwrite_answer = await future
         except TimeoutError:
             await form.delete()  # type: ignore
-            return [False, message]
+            return False, message
 
         if not overwrite_answer:
             await form.delete()  # type: ignore
-            return [False, form]
+            return False, form
 
-        return [True, form]
+        return True, form
 
-    async def _show_note_inline(self, call, notetag, page=0):
+    async def _show_note_inline(self, call, note, page=0):
         async def _remnote(call, notetag, note_msg):
             await note_msg.delete()
             self._notemap.pop(notetag, None)
@@ -199,11 +211,11 @@ class QNotes(loader.Module):
             await call.edit(self.strings["removed"])
 
         note_msg = await self._client.get_messages(
-            self._content_channel_id, ids=notetag[1]
+            self._content_channel_id, ids=note[1]
         )
 
         if not note_msg:
-            self._notemap.pop(notetag[0], None)
+            self._notemap.pop(note[0], None)
 
             await call.edit(
                 self.strings["msg_not_found_inline"],
@@ -215,14 +227,14 @@ class QNotes(loader.Module):
             return
 
         await call.edit(
-            self.strings["show_note_inline"].format(notetag[0], note_msg.text),  # type: ignore
+            self.strings["show_note_inline"].format(note[0], note_msg.text),  # type: ignore
             reply_markup=[
                 [
                     {"text": "⬅️ Назад", "callback": self._list_page, "args": (page,)},
                     {
                         "text": self.strings["remnote_inline"],
                         "callback": _remnote,
-                        "args": (notetag[0], note_msg),
+                        "args": (note[0], note_msg),
                     },
                 ],
                 [{"text": self.strings["close_inline"], "action": "close"}],
@@ -275,16 +287,15 @@ class QNotes(loader.Module):
             return
         try:
             if args[0].strip() in self._notemap:
-                overwrite = await self._ask_overwrite(message)
-                if not overwrite[0]:
+                need_overwrite, msg = await self._ask_overwrite(message)
+                if not need_overwrite:
                     return
-                await (
-                    await self._client.get_messages(
-                        self._content_channel_id,
-                        ids=self._notemap[args[0].strip()],
-                    )
-                ).delete()  # type: ignore
-                current_message = overwrite[1]
+                old_note_message = await self._client.get_messages(
+                    self._content_channel_id,
+                    ids=self._notemap[args[0].strip()],
+                )
+                old_note_message and await old_note_message.delete()  # type: ignore
+                current_message = msg
 
             note_message = await self._client.send_message(
                 self._content_channel_id, reply.text, reply_to=self._notes_topic.id
@@ -360,15 +371,30 @@ class QNotes(loader.Module):
             ):
                 self._notemap.pop(notetag, None)
                 return
-            notetext = note_message.text  # type: ignore
+            notetext = note_message.text or ""  # type: ignore
             if re.search(r"\{\w+\}", notetext):
-                placeholders = {**self.placeholders}
-                if reply_msg := await message.get_reply_message():
-                    reply_user = (
-                        await self._client.get_entity(reply_msg.peer_id)
-                        if isinstance(reply_msg.peer_id, PeerUser)
-                        else await self._client.get_entity(reply_msg.from_id)
+                if (
+                    not self.config["privacy_switch"]
+                    or message.sender_id == self._client.heroku_me.id
+                ):
+                    placeholders = {**self.placeholders}
+                else:
+                    message_author_entity = await self._client.get_entity(
+                        message.sender_id
                     )
+                    placeholders = {
+                        "my_phone": (
+                            await self._client(GetUsersRequest(id=[message.sender_id]))
+                        )[0].phone,
+                        "my_username": message_author_entity.username,
+                        "my_id": message.sender_id,
+                        "my_premium": self.strings["true"]
+                        if message_author_entity.premium
+                        else self.strings["false"],
+                    }
+
+                if reply_msg := await message.get_reply_message():
+                    reply_user = await self._client.get_entity(reply_msg.sender_id)
                     placeholders = {
                         **placeholders,
                         "reply_id": reply_user.id,
@@ -386,7 +412,7 @@ class QNotes(loader.Module):
                         else self.strings["false"],
                     }
 
-                placeholders = {**placeholders, "today": date.today()}
+                placeholders = placeholders | {"today": date.today()}
 
                 def replacer(match):
                     key = match.group(1)
