@@ -24,7 +24,7 @@ import asyncio
 from typing import cast
 from datetime import date
 
-from heroku import loader, utils
+from .. import loader, utils
 
 from herokutl.tl.functions.users import GetUsersRequest
 from herokutl.tl.types import InputUserSelf
