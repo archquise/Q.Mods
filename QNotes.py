@@ -1,4 +1,4 @@
-__version__ = (1, 1, 4)
+__version__ = (1, 1, 5)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -298,7 +298,10 @@ class QNotes(loader.Module):
                 current_message = msg
 
             note_message = await self._client.send_message(
-                self._content_channel_id, reply.text, reply_to=self._notes_topic.id
+                self._content_channel_id,
+                reply.text,
+                reply_to=self._notes_topic.id,
+                file=reply.media,
             )
             self._notemap[args[0].strip()] = note_message.id
 
@@ -421,5 +424,8 @@ class QNotes(loader.Module):
                     return utils.escape_html(str(placeholders[key]))
 
                 notetext = re.sub(r"\{(\w+)\}", replacer, notetext)
-            await utils.answer(message, notetext)
+            if media := note_message.media:  # type: ignore
+                await utils.answer_file(message, media, notetext)  # type: ignore
+            else:
+                await utils.answer(message, notetext)
             return
