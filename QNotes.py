@@ -1,4 +1,4 @@
-__version__ = (1, 1, 5)
+__version__ = (1, 1, 6)
 
 # █▀▀▄   █▀▄▀█ █▀█ █▀▄ █▀
 # ▀▀▀█ ▄ █ ▀ █ █▄█ █▄▀ ▄█
@@ -17,17 +17,16 @@ __version__ = (1, 1, 5)
 # meta banner: https://raw.githubusercontent.com/archquise/qmods_meta/main/qnotes.png
 # ---------------------------------------------------------------------------------
 
+import asyncio
 import logging
 import re
-import asyncio
-
-from typing import cast
 from datetime import date
-
-from .. import loader, utils
+from typing import cast
 
 from herokutl.tl.functions.users import GetUsersRequest
 from herokutl.tl.types import InputUserSelf
+
+from heroku import loader, utils
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +55,7 @@ class QNotes(loader.Module):
         "removed": "Note removed!",
         "nonotes": "You don't have any notes!",
         "privacy_switch": "Determines whose data will be used by the my_* placeholders\n\nTrue - the account that is issuing the note\nFalse - the account on which the userbot is running",
+        "note_prefix": "The prefix used to call up notes",
         "placeholders": """
         <b>Available placeholders</b>:
 
@@ -99,9 +99,10 @@ class QNotes(loader.Module):
         "false": "нет",
         "nonotes": "Нет заметок!",
         "privacy_switch": "Влияет на то, чьи данные будут использовать my_* плейсхолдеры\n\nTrue - аккаунта, который вызывает заметку\nFalse - аккаунта на котором стоит юзербот",
+        "note_prefix": "Префикс, с которым вызываются заметки",
         "placeholders": """
         <b>Доступные плейсхолдеры</b>:
-    
+
         об аккаунте, на котором стоит юзербот:
         {my_id} - айди
         @{my_username} - юзернейм, тег
@@ -129,7 +130,13 @@ class QNotes(loader.Module):
                 True,
                 lambda: self.strings["privacy_switch"],
                 validator=loader.validators.Boolean(),  # type: ignore
-            )
+            ),
+            loader.ConfigValue(
+                "note_prefix",
+                "#",
+                lambda: self.strings["note_prefix"],
+                validator=loader.validators.RegExp(r"^\S+$"),  # type: ignore
+            ),
         )
 
     async def client_ready(self, client, db):  # type: ignore
@@ -356,14 +363,14 @@ class QNotes(loader.Module):
     async def qnp(self, message) -> None:
         await utils.answer(message, self.strings["placeholders"])
 
-    @loader.watcher(startswith="#")
+    @loader.watcher()
     async def _note_watcher(self, message):
-        if not (
+        if not message.text.startswith(prefix := self.config["note_prefix"]) or not (
             await self._client.dispatcher.security.check(message, self._note_watcher)
         ):
             return
 
-        notetag = message.text.split("#", maxsplit=1)[1]
+        notetag = message.text.split(prefix, maxsplit=1)[1]
 
         if notetag in self._notemap:
             if not (
