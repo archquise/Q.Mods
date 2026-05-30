@@ -26,7 +26,7 @@ from typing import cast
 from herokutl.tl.functions.users import GetUsersRequest
 from herokutl.tl.types import InputUserSelf
 
-from heroku import loader, utils
+from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
